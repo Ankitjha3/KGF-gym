@@ -56,7 +56,11 @@
         <div class="auth-tabs" style="margin-bottom: 2rem;">
             <div class="tab-btn active" onclick="switchSection('students')">Students</div>
             <div class="tab-btn" onclick="switchSection('attendance')">Attendance</div>
-            <div class="tab-btn" onclick="switchSection('payments')">Payments</div>
+            <div class="tab-btn" onclick="switchSection('payments')" style="position: relative;">
+                Payments
+                <span id="payment-notify-dot"
+                    style="display:none; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background-color: var(--danger); border-radius: 50%;"></span>
+            </div>
             <div class="tab-btn" onclick="switchSection('announcements')">Announcements</div>
             <div class="tab-btn" onclick="switchSection('settings')">Settings</div>
         </div>

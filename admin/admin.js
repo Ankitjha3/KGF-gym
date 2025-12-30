@@ -105,7 +105,22 @@ const renderStats = () => {
     if (dueEl) dueEl.textContent = formatCurrency(totalDue);
     if (todayColEl) todayColEl.textContent = formatCurrency(collectedToday);
 
+
+
     renderLast7Days();
+
+    // Notification Dot Logic (Safe)
+    try {
+        if (Array.isArray(studentsData)) {
+            const pendingCount = studentsData.filter(s => s.paymentStatus === 'PENDING_APPROVAL').length;
+            const notifyDot = document.getElementById('payment-notify-dot');
+            if (notifyDot) {
+                notifyDot.style.display = pendingCount > 0 ? 'block' : 'none';
+            }
+        }
+    } catch (e) {
+        console.warn("Error updating notification dot:", e);
+    }
 };
 
 const renderLast7Days = () => {
