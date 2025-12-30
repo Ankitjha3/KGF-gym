@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGF Gym - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="#" class="logo">KGF ADMIN</a>
+            <div>
+                <span class="text-muted" style="margin-right: 1rem;">Owner</span>
+                <button id="logout-btn" class="btn btn-outline btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Dashboard Stats -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3>Overview</h3>
+            <button class="btn btn-outline btn-sm" onclick="init()">↻ Refresh Stats</button>
+        </div>
+
+        <!-- ALERTS CONTAINER -->
+        <div id="admin-alerts" style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem;"></div>
+
+        <div class="dashboard-grid">
+            <div class="card stat-card">
+                <div class="stat-label">Total Students</div>
+                <div class="stat-value" id="total-students">-</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Today's Attendance</div>
+                <div class="stat-value text-success" id="present-count">-</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Total Collected</div>
+                <div class="stat-value text-success" id="total-collected">₹0</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Total Outstanding</div>
+                <div class="stat-value text-danger" id="total-due">₹0</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Payments Due (Count)</div>
+                <div class="stat-value text-danger" id="due-count">-</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="auth-tabs" style="margin-bottom: 2rem;">
+            <div class="tab-btn active" onclick="switchSection('students')">Students</div>
+            <div class="tab-btn" onclick="switchSection('attendance')">Attendance</div>
+            <div class="tab-btn" onclick="switchSection('payments')">Payments</div>
+            <div class="tab-btn" onclick="switchSection('announcements')">Announcements</div>
+            <div class="tab-btn" onclick="switchSection('settings')">Settings</div>
+        </div>
+
+        <!-- STUDENTS SECTION -->
+        <section id="section-students">
+            <div
+                style="display: flex; flex-wrap:wrap; gap: 1rem; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Student Management</h3>
+                <div style="display:flex; gap:0.5rem; flex-grow: 1; max-width: 400px;">
+                    <input type="text" id="search-students" placeholder="Search by Name or Phone..."
+                        style="padding: 0.5rem;">
+                    <button class="btn btn-primary" onclick="openAddModal()">+ Add</button>
+                </div>
+            </div>
+            <div class="card table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Phone</th>
+                            <th>Fee (Due)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-list-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ATTENDANCE SECTION -->
+        <section id="section-attendance" class="hidden">
+            <div
+                style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Mark Attendance</h3>
+                <div style="display:flex; gap:0.5rem; flex-grow:1; max-width: 500px; align-items:center;">
+                    <input type="text" id="search-attendance" placeholder="Search student..." style="padding: 0.5rem;">
+                    <input type="date" id="attendance-date" class="form-group" style="width: auto; margin-bottom:0;">
+                </div>
+            </div>
+            <div class="card table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-list-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+                <button class="btn btn-primary" style="margin-top: 1rem; width: 100%;" onclick="saveAttendance()">Save
+                    Attendance</button>
+            </div>
+
+            <!-- Analytics: Last 7 Days -->
+            <div class="card table-container" style="margin-top: 2rem;">
+                <h4>Last 7 Days Activity</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Present Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="last-7-days-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PAYMENTS SECTION -->
+        <section id="section-payments" class="hidden">
+            <h3>Payment Approvals</h3>
+            <div class="card table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Due Amount</th>
+                            <th>Next Due</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payment-list-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="section-announcements" class="hidden">
+            <h3>Notice Board</h3>
+            <div style="margin-bottom: 1rem; text-align: right;">
+                <button class="btn btn-primary" onclick="openAnnouncementModal()">+ Post New Notice</button>
+            </div>
+
+            <div class="card table-container">
+                <h4>Recent Announcements</h4>
+                <div id="announcement-list-body" style="display:flex; flex-direction:column; gap:0.75rem;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- MODAL: Announcement -->
+        <div id="announcement-modal" class="hidden"
+            style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; display:none;">
+            <div class="card" style="width: 90%; max-width: 500px;">
+                <h3 id="announcement-modal-title">Post New Notice</h3>
+                <input type="hidden" id="modal-announcement-id">
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="modal-announcement-input" rows="5" placeholder="Type your notice here..."
+                        style="width:100%; padding:0.75rem; border-radius:0.5rem; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main); font-family:inherit;"></textarea>
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                    <button class="btn btn-outline" style="flex:1" onclick="closeAnnouncementModal()">Cancel</button>
+                    <button class="btn btn-primary" style="flex:1" onclick="handleSaveAnnouncement()">Save</button>
+                </div>
+            </div>
+        </div>
+        </section>
+
+        <section id="section-settings" class="hidden">
+            <div style="display:grid; gap:1.5rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <!-- Site Settings -->
+                <div class="card">
+                    <h3>Site Settings</h3>
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label>Gym UPI Address (VPA)</label>
+                            <input type="text" id="setting-upi" placeholder="e.g. name@upi" required>
+                            <small class="text-muted">Students will be redirected to pay to this ID.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Admin Mobile Number</label>
+                            <input type="tel" id="setting-phone" placeholder="e.g. 919876543210" required>
+                            <small class="text-muted">For receiving payment screenshots on WhatsApp.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Settings</button>
+                    </form>
+                </div>
+
+                <!-- Passcode Settings -->
+                <div class="card">
+                    <h3>Update Admin Passcode</h3>
+                    <div class="alert alert-warning" style="margin-bottom:1rem; font-size:0.9em; color:var(--primary);">
+                        ⚠️ Keep this code safe.
+                    </div>
+                    <form id="passcode-form">
+                        <div class="form-group">
+                            <label>Current Passcode</label>
+                            <input type="password" id="current-passcode" required placeholder="Enter current code">
+                        </div>
+                        <div class="form-group">
+                            <label>New Passcode</label>
+                            <input type="password" id="new-passcode" required placeholder="Enter new code">
+                        </div>
+                        <button type="submit" class="btn btn-danger">Update Passcode</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL: Add Student -->
+    <div id="add-student-modal" class="hidden"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; display:none;">
+        <div class="card" style="width: 90%; max-width: 500px;">
+            <h3>Add New Student</h3>
+            <form id="add-student-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="new-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="new-phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Student Fee (₹)</label>
+                    <input type="number" id="new-fee" value="1000" required>
+                </div>
+                <!-- Access Code Auto-generated -->
+
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" style="flex:1"
+                        onclick="closeAddModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Student -->
+    <div id="edit-modal" class="hidden"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; display:none;">
+        <div class="card" style="width: 90%; max-width: 500px; max-height:85vh; overflow-y:auto;">
+            <h3>Edit Student Details</h3>
+            <form id="edit-student-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="edit-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="edit-phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Student Fee (₹)</label>
+                    <input type="number" id="edit-fee" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount Due (₹) - <small>Auto-calculated, editable</small></label>
+                    <input type="number" id="edit-due" required>
+                </div>
+                <div class="form-group">
+                    <label>Next Payment Date</label>
+                    <input type="date" id="edit-next-due" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount Paid (₹)</label>
+                    <input type="number" id="edit-paid" required>
+                </div>
+                <div class="form-group">
+                    <label>Diet & Workout Plan</label>
+                    <textarea id="edit-plan" rows="4" placeholder="Enter diet or workout plan details here..."
+                        style="width:100%; padding:0.75rem; border-radius:0.5rem; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main); font-family:inherit;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Recent Progress Logs</label>
+                    <div id="edit-progress-list"
+                        style="max-height:150px; overflow-y:auto; background:rgba(255,255,255,0.05); padding:0.5rem; border-radius:4px; font-size:0.9rem;">
+                        <!-- Populated by JS -->
+                        <div class="text-muted">No logs available.</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1">Save Changes</button>
+                    <button type="button" class="btn btn-outline" style="flex:1"
+                        onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Student Details (Mobile View) -->
+    <div id="student-details-modal" class="hidden"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; display:none;">
+        <div class="card" style="width: 90%; max-width: 400px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                <h3 id="detail-name" style="margin:0;">Student Name</h3>
+                <span id="detail-status" class="status">STATUS</span>
+            </div>
+
+            <div style="display:grid; gap:0.5rem; margin-bottom:1.5rem;">
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="text-muted">Code:</span>
+                    <strong id="detail-code">---</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="text-muted">Phone:</span>
+                    <strong id="detail-phone">---</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="text-muted">Monthly Fee:</span>
+                    <strong id="detail-fee">₹0</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="text-muted">Total Due:</span>
+                    <strong id="detail-due" class="text-danger">₹0</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="text-muted">Joined:</span>
+                    <strong id="detail-joined">---</strong>
+                </div>
+            </div>
+
+            <div class="actions-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+                <button id="btn-detail-wa" class="btn btn-outline" style="justify-content:center; gap:0.5rem;">
+                    WhatsApp
+                </button>
+                <button id="btn-detail-edit" class="btn btn-primary" style="justify-content:center; gap:0.5rem;">
+                    Edit
+                </button>
+                <button id="btn-detail-renew" class="btn btn-success"
+                    style="justify-content:center; gap:0.5rem; border:1px solid var(--success); color:var(--success); background:transparent;">
+                    Renew Fee
+                </button>
+                <button id="btn-detail-delete" class="btn btn-danger" style="justify-content:center; gap:0.5rem;">
+                    Delete
+                </button>
+            </div>
+
+            <div style="margin-top:1rem; text-align:center;">
+                <button class="btn btn-sm btn-outline" onclick="closeStudentDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import './admin.js';
+        console.log("Admin Module Script Tag Executed");
+    </script>
+    <script>
+        // Simple tab switcher helper
+        window.switchSection = (id) => {
+            ['students', 'attendance', 'payments', 'announcements', 'settings'].forEach(s => {
+                document.getElementById('section-' + s).classList.add('hidden');
+            });
+            document.getElementById('section-' + id).classList.remove('hidden');
+
+            // Update active tab style
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+        };
+
+        window.openAddModal = () => {
+            const modal = document.getElementById('add-student-modal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex'; // Ensure flex centering
+        };
+        window.closeAddModal = () => {
+            const modal = document.getElementById('add-student-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        };
+
+        window.openEditModal = () => {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+        window.closeEditModal = () => {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

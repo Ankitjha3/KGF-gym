@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGF Gym - Student</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="#" class="logo">KGF STUDENT</a>
+            <div>
+                <span id="student-name-display" class="text-muted" style="margin-right: 1rem;">User</span>
+                <button id="logout-btn" class="btn btn-outline btn-sm">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- ALERTS -->
+        <!-- ALERTS -->
+        <div id="student-alerts" style="margin-bottom: 1rem;"></div>
+
+        <!-- ANNOUNCEMENTS -->
+        <div id="announcement-section" style="margin-bottom: 1.5rem; display:none;">
+            <div class="card" style="border-left: 4px solid var(--primary);">
+                <h3 style="margin-bottom:0.5rem; font-size:1.1rem; display:flex; align-items:center; gap:0.5rem;">
+                    <span>📢</span> Notice Board
+                </h3>
+                <div id="announcement-list" style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <!-- JS Populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="dashboard-grid">
+            <div class="card stat-card">
+                <div class="stat-label">Attendance</div>
+                <div class="stat-value text-success" id="attendance-percent">0%</div>
+                <div class="text-muted" id="attendance-details">0/0 Days</div>
+                <div style="font-size: 0.8em; margin-top: 0.5rem; color: var(--primary);">
+                    This Month: <strong id="month-attendance-count">0</strong>
+                </div>
+                <a href="attendance.html" class="btn btn-outline btn-sm"
+                    style="margin-top: 0.5rem; display: block; text-align: center; text-decoration: none;">View
+                    History</a>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Payment Status</div>
+                <div class="stat-value" id="payment-status">-</div>
+            </div>
+
+            <!-- Progress Link Card -->
+            <div class="card stat-card">
+                <div class="stat-label">My Fitness</div>
+                <div class="stat-value" style="font-size:1.5rem; margin:0.5rem 0;">BMI Tracker</div>
+                <a href="progress.html" class="btn btn-outline btn-sm">Track Progress</a>
+            </div>
+
+            <div class="card stat-card">
+                <div class="stat-label">Amount Paid</div>
+                <div class="stat-value text-success" id="amount-paid">₹0</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Amount Due</div>
+                <div class="stat-value text-danger" id="due-amount">₹0</div>
+                <button id="pay-now-btn" class="btn btn-primary btn-sm" style="margin-top:0.5rem">Pay Now</button>
+            </div>
+        </div>
+
+
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3>Status & Plans</h3>
+                <button class="btn btn-outline btn-sm" onclick="openPlanModal()">📄 View My Diet/Workout Plan</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <div class="text-muted">Monthly Fee</div>
+                    <div class="stat-value" style="font-size:1.5rem" id="monthly-fee">-</div>
+                </div>
+                <div>
+                    <div class="text-muted">Next Due Date</div>
+                    <div class="stat-value" style="font-size:1.5rem" id="next-due">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Diet/Workout Plan -->
+    <div id="plan-modal" class="hidden"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; align-items:center; justify-content:center; display:none;">
+        <div class="card" style="width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">
+                <h3>My Diet & Workout Plan</h3>
+                <button class="btn-icon" onclick="closePlanModal()" style="border:none;">✕</button>
+            </div>
+            <div id="plan-content" style="white-space: pre-wrap; line-height: 1.6; color: var(--text-main);">
+                <!-- Plan text goes here -->
+            </div>
+            <button class="btn btn-outline" style="width:100%; margin-top:2rem;"
+                onclick="closePlanModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Hidden UPI QR Modal Logic (Or just redirect) -> Redirect is simpler for MVP -->
+
+    <!-- MODAL: Payment / QR Code -->
+    <div id="payment-modal" class="hidden"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; display:none;">
+        <div class="card" style="width: 90%; max-width: 400px; text-align: center;">
+            <h3 style="margin-bottom: 1rem;">Scan to Pay</h3>
+
+            <img id="qr-code-img" src="" alt="QR Code"
+                style="width: 200px; height: 200px; margin-bottom: 1rem; border: 2px solid #333; border-radius: 8px;">
+
+            <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;" id="pay-amount-display">Rs. 0
+            </div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;" id="pay-upi-display"></div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="window.sendPaymentScreenshot()">Send Screenshot on
+                    WhatsApp</button>
+                <button class="btn btn-outline" onclick="window.markAsPaid()">Step 2: I Have Paid</button>
+                <button class="btn btn-outline" onclick="closePaymentModal()"
+                    style="margin-top: 0.5rem; color: var(--text-muted); border-color: transparent;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="student.js"></script>
+    <script>
+        window.closePaymentModal = () => {
+            const modal = document.getElementById('payment-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

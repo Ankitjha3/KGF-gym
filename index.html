@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGF Gym - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="auth-wrapper">
+        <div class="card auth-card fade-in">
+            <h1 class="text-center logo" style="margin-bottom: 2rem;">KGF GYM</h1>
+
+            <div class="auth-tabs">
+                <div class="tab-btn active" onclick="switchTab('admin')">Admin Login</div>
+                <div class="tab-btn" onclick="switchTab('student')">Student Login</div>
+            </div>
+
+            <!-- ADMIN LOGIN -->
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label>Admin Passcode</label>
+                    <input type="password" id="admin-passcode" placeholder="Enter 6-digit code" required
+                        inputmode="numeric">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+
+            <!-- STUDENT LOGIN -->
+            <form id="student-login-form" class="hidden">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="student-name" required placeholder="e.g. Rocky">
+                </div>
+                <div class="form-group">
+                    <label>Access Code</label>
+                    <input type="password" id="access-code" required placeholder="6 digit code" maxlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login as Student</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="js/auth.js"></script>
+    <script>
+        window.switchTab = (tab) => {
+            const adminForm = document.getElementById('admin-login-form');
+            const studentForm = document.getElementById('student-login-form');
+            const tabs = document.querySelectorAll('.tab-btn');
+
+            if (tab === 'admin') {
+                adminForm.classList.remove('hidden');
+                studentForm.classList.add('hidden');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                adminForm.classList.add('hidden');
+                studentForm.classList.remove('hidden');
+                tabs[0].classList.remove('active');
+                tabs[1].classList.add('active');
+            }
+        }
+    </script>
+</body>
+
+</html>
