@@ -18,8 +18,7 @@ const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
 // --- PAGE ROUTING ---
-const path = window.location.pathname;
-const isHistoryPage = path.endsWith('attendance.html');
+const isHistoryPage = !!document.getElementById('month-filter');
 
 const init = () => {
     const docRef = doc(db, "students", user.id);
@@ -438,7 +437,8 @@ const renderProgressHistory = (data) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${formatDate(log.date)}</td>
-            <td>${log.weight}kg <br> <small class="text-muted">${log.height}cm</small></td>
+            <td>${log.weight} kg</td>
+            <td>${log.height} cm</td>
             <td><span style="font-weight:bold;">${bmi}</span></td>
             <td>
                 <button class="btn btn-outline btn-sm" style="padding:0.25rem 0.5rem;" onclick="handleEditLog('${log.id}', '${log.date}', ${log.weight}, ${log.height})">✏️</button>
