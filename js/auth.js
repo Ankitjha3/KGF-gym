@@ -116,7 +116,7 @@ if (studentLoginForm) {
             let found = false;
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.name.toLowerCase() === name.toLowerCase()) {
+                if (data.name.trim().toLowerCase() === name.toLowerCase()) {
                     // Success!
                     localStorage.setItem('kgf_student', JSON.stringify({ id: doc.id, ...data }));
                     window.location.href = 'student/dashboard.html';

@@ -157,6 +157,7 @@ const renderLast7Days = () => {
 // --- SEARCH & FILTER ---
 let searchQueryStudents = "";
 let searchQueryAttendance = "";
+let searchQueryPayments = "";
 
 const handleSearch = (query, type) => {
     if (type === 'students') {
@@ -165,6 +166,9 @@ const handleSearch = (query, type) => {
     } else if (type === 'attendance') {
         searchQueryAttendance = query.toLowerCase();
         renderAttendanceList();
+    } else if (type === 'payments') {
+        searchQueryPayments = query.toLowerCase();
+        renderPaymentList();
     }
 };
 
@@ -188,7 +192,10 @@ const renderStudentList = () => {
         tr.innerHTML = `
             <td data-label="Student">
                 <div class="student-card-btn" onclick="openStudentDetails('${student.id}')">
-                    <div style="font-weight:700; font-size:1.05rem;">${student.name}</div>
+                    <div style="font-weight:700; font-size:1.05rem;">
+                        ${student.name}
+                        ${student.paymentStatus === 'PENDING_APPROVAL' ? '<span style="background:orange; color:white; padding:2px 6px; border-radius:10px; font-size:0.6rem; margin-left:5px; vertical-align:middle;">PENDING</span>' : ''}
+                    </div>
                     <div style="font-size:0.8rem; opacity:0.8;">Joined: ${formatDate(student.joinDate)}</div>
                 </div>
             </td>
@@ -252,7 +259,9 @@ const renderPaymentList = () => {
     // Filter only those with Due or Pending
     const dueStudents = studentsData.filter(s => s.paymentStatus !== 'PAID');
 
-    dueStudents.forEach(student => {
+    const filtered = filterData(dueStudents, searchQueryPayments);
+
+    filtered.forEach(student => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td data-label="Name">${student.name}</td>
@@ -794,6 +803,13 @@ const historySearchInput = document.getElementById('search-history');
 if (historySearchInput) {
     historySearchInput.addEventListener('input', () => {
         renderHistorySection();
+    });
+}
+
+const searchPaymentsInput = document.getElementById('search-payments');
+if (searchPaymentsInput) {
+    searchPaymentsInput.addEventListener('input', (e) => {
+        handleSearch(e.target.value, 'payments');
     });
 }
 

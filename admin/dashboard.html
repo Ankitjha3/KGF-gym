@@ -143,7 +143,13 @@
 
         <!-- PAYMENTS SECTION -->
         <section id="section-payments" class="hidden">
-            <h3>Payment Approvals</h3>
+            <div
+                style="display: flex; flex-wrap:wrap; gap: 1rem; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Payment Approvals</h3>
+                <div style="display:flex; gap:0.5rem; flex-grow: 1; max-width: 400px;">
+                    <input type="text" id="search-payments" placeholder="Search by Name..." style="padding: 0.5rem;">
+                </div>
+            </div>
             <div class="card table-container">
                 <table>
                     <thead>
@@ -416,6 +422,8 @@
                     onchange="renderHistorySection()">
                     <!-- Populated by JS -->
                 </select>
+                <input type="text" id="search-history" placeholder="Search history..."
+                    style="padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: var(--text-main);">
                 <button class="btn btn-outline btn-sm" onclick="renderHistorySection()">↻ Refresh</button>
                 <button class="btn btn-sm btn-danger" onclick="handleClearAllHistory()" title="Delete all history">❌
                     Clear All</button>
