@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 // --- STUDENT MANAGEMENT ---
 
@@ -46,20 +46,52 @@ export const markAttendance = async (studentId, date, status) => {
 
 // --- PAYMENTS ---
 
-export const approvePayment = async (studentId, amount) => {
-    // 1. Mark as PAID or Partial? For now, assume Full Payment resets Due to 0
+// --- PAYMENT LOGGING ---
+export const logPayment = async (paymentData) => {
+    // paymentData: { studentId, studentName, amount, date: ISOString, monthKey: "YYYY-MM" }
+    try {
+        await addDoc(collection(db, "payment_logs"), {
+            ...paymentData,
+            timestamp: Date.now()
+        });
+    } catch (e) {
+        console.error("Error logging payment:", e);
+    }
+};
+
+export const getPaymentLogs = async () => {
+    try {
+        const q = query(collection(db, "payment_logs"), orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+        console.error("Error fetching payment logs:", e);
+        return [];
+    }
+};
+
+// --- PAYMENTS ---
+
+export const approvePayment = async (studentId, amount, studentName) => {
     const ref = doc(db, "students", studentId);
+    const paymentDate = new Date();
 
-    // Get current to add to historical if we tracked that, but for MVP:
-    // Just reset Due to 0, Status to PAID, Add to PaidTotal?
-    // Let's rely on simple update for now, or fetch first
-
-    // For simplicity: Add amount to paidAmount, set dueAmount to 0
+    // 1. Update Student Record
     await updateDoc(ref, {
         paymentStatus: 'PAID',
         dueAmount: 0,
-        paidAmount: amount, // Logic might need refinement if cumulative
-        lastPaymentDate: new Date().toISOString()
+        paidAmount: amount,
+        lastPaymentDate: paymentDate.toISOString()
+    });
+
+    // 2. Log Transaction for History
+    const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`;
+    await logPayment({
+        studentId,
+        studentName: studentName || "Unknown", // Pass name if possible, else fetch
+        amount: Number(amount),
+        date: paymentDate.toISOString(),
+        monthKey: monthKey
     });
 };
 
@@ -185,3 +217,5 @@ export const updateProgressLog = async (studentId, logId, updatedData) => {
         }
     }
 };
+
+

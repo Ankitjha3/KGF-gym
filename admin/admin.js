@@ -2,7 +2,7 @@
 console.log("ADMIN.JS LOADED - START");
 import { checkAdminAuth, logout, updateAdminPasscode } from '../js/auth.js';
 
-import { getAllStudents, addStudent, markAttendance, approvePayment, setStudentFee, deleteStudent, getPaymentSettings, updatePaymentSettings, updateStudent, addAnnouncement, getAnnouncements, deleteAnnouncement, updateAnnouncement } from '../js/db.js';
+import { getAllStudents, addStudent, markAttendance, approvePayment, setStudentFee, deleteStudent, getPaymentSettings, updatePaymentSettings, updateStudent, addAnnouncement, getAnnouncements, deleteAnnouncement, updateAnnouncement, getPaymentLogs } from '../js/db.js';
 import { formatCurrency, formatDate, showToast } from '../js/utils.js';
 
 // Verify Auth
@@ -83,27 +83,34 @@ const renderStats = () => {
     const present = studentsData.filter(s => s.attendance && s.attendance[currentDate] === 'P').length;
     document.getElementById('present-count').textContent = present;
 
-    // Financials
-    const totalCollected = studentsData.reduce((sum, s) => sum + (s.paidAmount || 0), 0);
+    // Financials (Automated from Logs)
+    // 1. Fetch Logs
+    getPaymentLogs().then(logs => {
+        // 2. Filter for Current Month (YYYY-MM)
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        const currentMonthLogs = logs.filter(l => l.monthKey === currentMonthKey);
+        const totalCollected = currentMonthLogs.reduce((sum, log) => sum + (Number(log.amount) || 0), 0);
+
+        // 3. Update UI
+        const colEl = document.getElementById('total-collected');
+        if (colEl) colEl.textContent = formatCurrency(totalCollected);
+
+        // Also update "Collected Today" separately if needed, or keep existing logic?
+        // Existing logic used student.lastPaymentDate. Let's use Logs for that too for consistency!
+        const todayStr = now.toISOString().split('T')[0];
+        const todayLogs = logs.filter(l => l.date.startsWith(todayStr));
+        const collectedToday = todayLogs.reduce((sum, log) => sum + (Number(log.amount) || 0), 0);
+
+        const todayColEl = document.getElementById('collected-today');
+        if (todayColEl) todayColEl.textContent = formatCurrency(collectedToday);
+    });
+
+    // Total Due (Remain from Students Data)
     const totalDue = studentsData.reduce((sum, s) => sum + (s.dueAmount || 0), 0);
-
-    // Collected Today Logic
-    // We check if 'lastPaymentDate' matches today's date
-    const todayStr = new Date().toISOString().split('T')[0];
-    const collectedToday = studentsData.reduce((sum, s) => {
-        if (s.lastPaymentDate && s.lastPaymentDate.startsWith(todayStr)) {
-            return sum + (s.paidAmount || 0);
-        }
-        return sum;
-    }, 0);
-
-    const colEl = document.getElementById('total-collected');
     const dueEl = document.getElementById('total-due');
-    const todayColEl = document.getElementById('collected-today');
-
-    if (colEl) colEl.textContent = formatCurrency(totalCollected);
     if (dueEl) dueEl.textContent = formatCurrency(totalDue);
-    if (todayColEl) todayColEl.textContent = formatCurrency(collectedToday);
 
 
 
@@ -293,8 +300,9 @@ window.saveAttendance = async () => {
 };
 
 window.handleApprovePayment = async (id, amount) => {
+    const student = studentsData.find(s => s.id === id);
     if (confirm('Approve payment of ' + formatCurrency(amount) + '?')) {
-        await approvePayment(id, amount);
+        await approvePayment(id, amount, student.name);
         await fetchStudents();
         renderPaymentList();
         renderStudentList();
@@ -632,6 +640,115 @@ window.handleDeleteAnnouncement = async (id) => {
     }
 };
 
+// --- PAYMENT HISTORY (AUTOMATED) ---
+// --- PAYMENT HISTORY (PAGE) ---
+window.renderHistorySection = async () => {
+    const tbody = document.getElementById('history-section-body');
+    const monthSelect = document.getElementById('history-month-select');
+    const totalEl = document.getElementById('history-month-total');
+    const countEl = document.getElementById('history-month-count');
+
+    if (!tbody) return;
+
+    // Only show loading if table is empty (first load), otherwise keep showing old data while refreshing
+    if (tbody.children.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+    }
+
+    try {
+        const logs = await getPaymentLogs(); // Returns all logs sorted by timestamp desc
+
+        // 1. Extract Unique Months & Sort Descending (Newest First)
+        let months = [...new Set(logs.map(log => log.monthKey))];
+        months.sort().reverse();
+
+        // 2. Smart Dropdown Update (Only rebuild if changed)
+        const currentOptions = Array.from(monthSelect.options).map(o => o.value).filter(v => v);
+        const hasChanged = JSON.stringify(currentOptions) !== JSON.stringify(months);
+
+        let selectedMonth = monthSelect.value;
+
+        // If nothing selected or selection invalid/empty, default to newest month
+        if (!selectedMonth || (months.length > 0 && !months.includes(selectedMonth))) {
+            selectedMonth = months.length > 0 ? months[0] : '';
+        }
+
+        if (hasChanged) {
+            monthSelect.innerHTML = '';
+            if (months.length === 0) {
+                monthSelect.innerHTML = '<option value="">No Data</option>';
+            } else {
+                months.forEach(m => {
+                    // Calculate Total for this month
+                    const mLogs = logs.filter(l => l.monthKey === m);
+                    const mTotal = mLogs.reduce((sum, l) => sum + Number(l.amount), 0);
+
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = `${m} (₹${mTotal})`; // e.g. "2025-12 (₹1000)"
+                    monthSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // Restore/Ensure Selection
+        if (selectedMonth) {
+            monthSelect.value = selectedMonth;
+        }
+
+        // Handle "empty" state if no logs
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3">No history recorded yet.</td></tr>';
+            totalEl.innerText = '₹0';
+            countEl.innerText = '0';
+            return;
+        }
+
+        // 3. Filter Logs by Selected Month
+        // Read fresh value from DOM in case we just set it or user changed it
+        selectedMonth = monthSelect.value;
+
+        const filteredLogs = logs.filter(log => log.monthKey === selectedMonth);
+
+        // 4. Calculate Stats
+        const total = filteredLogs.reduce((sum, log) => sum + Number(log.amount), 0);
+        const count = filteredLogs.length;
+
+        totalEl.innerText = formatCurrency(total);
+        countEl.innerText = count;
+
+        // 5. Render Rows
+        tbody.innerHTML = '';
+        if (filteredLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3">No payments in this month.</td></tr>';
+            return;
+        }
+
+        // Sort by date desc (latest first) relative to the month
+        filteredLogs.sort((a, b) => b.timestamp - a.timestamp);
+
+        filteredLogs.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatDate(log.date)}</td>
+                <td>${log.studentName || 'Unknown'}</td>
+                <td style="font-weight:bold; color:var(--success)">${formatCurrency(log.amount)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (e) {
+        console.error("Error loading history:", e);
+        tbody.innerHTML = '<tr><td colspan="3" style="color:var(--danger)">Error loading history.</td></tr>';
+    }
+};
+
+window.closeHistoryModal = () => {
+    // Deprecated but keeping safe to avoid breakage if ref exists
+    const el = document.getElementById('history-modal');
+    if (el) { el.classList.add('hidden'); el.style.display = 'none'; }
+};
+
 window.init = init; // Expose for Refresh button
 
 // Search Listeners
@@ -653,6 +770,8 @@ if (searchAttendanceInput) {
 init();
 
 window.sendWhatsapp = sendWhatsapp;
+
+// --- STUDENT DETAILS MODAL (MOBILE) ---
 
 // --- STUDENT DETAILS MODAL (MOBILE) ---
 window.openStudentDetails = (id) => {
@@ -695,4 +814,30 @@ window.closeStudentDetailsModal = () => {
     const modal = document.getElementById('student-details-modal');
     modal.classList.add('hidden');
     modal.style.display = 'none';
+};
+
+window.switchSection = (sectionName) => {
+    // Hide all
+    const sections = ['students', 'attendance', 'payments', 'announcements', 'settings', 'history'];
+    sections.forEach(s => {
+        const el = document.getElementById('section-' + s);
+        if (el) el.classList.add('hidden');
+    });
+
+    // Show clicked
+    const target = document.getElementById(`section-${sectionName}`);
+    if (target) target.classList.remove('hidden');
+
+    // Update Tabs
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(t => t.classList.remove('active'));
+
+    // Find active tab and set class (simple text match)
+    tabs.forEach(t => {
+        if (t.innerText.toLowerCase().includes(sectionName)) t.classList.add('active');
+    });
+
+    // Render Logic
+    if (sectionName === 'announcements') renderAnnouncements();
+    if (sectionName === 'history') renderHistorySection();
 };

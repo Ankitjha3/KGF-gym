@@ -23,7 +23,9 @@
         <!-- Dashboard Stats -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <h3>Overview</h3>
-            <button class="btn btn-outline btn-sm" onclick="init()">↻ Refresh Stats</button>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-outline btn-sm" onclick="init()">↻ Refresh Stats</button>
+            </div>
         </div>
 
         <!-- ALERTS CONTAINER -->
@@ -61,6 +63,7 @@
                 <span id="payment-notify-dot"
                     style="display:none; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background-color: var(--danger); border-radius: 50%;"></span>
             </div>
+            <div class="tab-btn" onclick="switchSection('history')">History</div>
             <div class="tab-btn" onclick="switchSection('announcements')">Announcements</div>
             <div class="tab-btn" onclick="switchSection('settings')">Settings</div>
         </div>
@@ -370,24 +373,84 @@
         </div>
     </div>
 
+    <!-- MODAL: End Month Reset -->
+    <div id="end-month-modal" class="hidden"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center; display:none;">
+        <div class="card" style="width: 90%; max-width: 400px;">
+            <h3>End Month / Reset</h3>
+            <div class="alert alert-warning" style="font-size:0.9em; margin-bottom:1rem; color:var(--text-main);">
+                ⚠️ <strong>Warning:</strong> This will save the current 'Total Collected' amount to history and
+                <span style="color:var(--danger)">RESET Paid Amount to 0</span> for ALL students.
+            </div>
+
+            <div class="form-group">
+                <label>Final Collected Amount (Verify)</label>
+                <input type="number" id="end-month-collected" style="font-size:1.5em; font-weight:bold;">
+                <small class="text-muted">You can adjust this if the system total is different from cash in
+                    hand.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Total Outstanding (For Ref)</label>
+                <input type="number" id="end-month-due" disabled style="background:rgba(255,255,255,0.05);">
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" style="flex:1"
+                    onclick="closeEndMonthModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" style="flex:1" onclick="confirmEndMonth()">Confirm
+                    Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTORY SECTION (New Dedicated Page) -->
+    <section id="section-history" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Collection History</h3>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <select id="history-month-select" class="input-field" style="width: auto; padding: 0.25rem 0.5rem;"
+                    onchange="renderHistorySection()">
+                    <!-- Populated by JS -->
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="renderHistorySection()">↻ Refresh</button>
+            </div>
+        </div>
+
+        <!-- Monthly Stats Cards -->
+        <div class="stats-grid"
+            style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="card stat-card" style="padding: 1rem;">
+                <div class="stat-label">Month Total</div>
+                <div class="stat-value text-success" id="history-month-total">₹0</div>
+            </div>
+            <div class="card stat-card" style="padding: 1rem;">
+                <div class="stat-label">Transactions</div>
+                <div class="stat-value" id="history-month-count">0</div>
+            </div>
+        </div>
+
+        <div class="card table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="history-section-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
     <script type="module">
         import './admin.js';
         console.log("Admin Module Script Tag Executed");
     </script>
     <script>
-        // Simple tab switcher helper
-        window.switchSection = (id) => {
-            ['students', 'attendance', 'payments', 'announcements', 'settings'].forEach(s => {
-                document.getElementById('section-' + s).classList.add('hidden');
-            });
-            document.getElementById('section-' + id).classList.remove('hidden');
-
-            // Update active tab style
-            const tabs = document.querySelectorAll('.tab-btn');
-            tabs.forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-        };
-
         window.openAddModal = () => {
             const modal = document.getElementById('add-student-modal');
             modal.classList.remove('hidden');
