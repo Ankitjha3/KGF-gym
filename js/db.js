@@ -70,6 +70,17 @@ export const getPaymentLogs = async () => {
     }
 };
 
+export const clearAllPaymentLogs = async () => {
+    try {
+        const snapshot = await getDocs(collection(db, "payment_logs"));
+        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+    } catch (e) {
+        console.error("Error clearing logs:", e);
+        throw e;
+    }
+};
+
 // --- PAYMENTS ---
 
 export const approvePayment = async (studentId, amount, studentName) => {

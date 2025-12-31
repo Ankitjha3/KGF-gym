@@ -2,7 +2,7 @@
 console.log("ADMIN.JS LOADED - START");
 import { checkAdminAuth, logout, updateAdminPasscode } from '../js/auth.js';
 
-import { getAllStudents, addStudent, markAttendance, approvePayment, setStudentFee, deleteStudent, getPaymentSettings, updatePaymentSettings, updateStudent, addAnnouncement, getAnnouncements, deleteAnnouncement, updateAnnouncement, getPaymentLogs } from '../js/db.js';
+import { getAllStudents, addStudent, markAttendance, approvePayment, setStudentFee, deleteStudent, getPaymentSettings, updatePaymentSettings, updateStudent, addAnnouncement, getAnnouncements, deleteAnnouncement, updateAnnouncement, getPaymentLogs, clearAllPaymentLogs } from '../js/db.js';
 import { formatCurrency, formatDate, showToast } from '../js/utils.js';
 
 // Verify Auth
@@ -316,7 +316,23 @@ window.handleDelete = async (id) => {
         await deleteStudent(id);
         await fetchStudents();
         renderStudentList();
+        renderStats(); // FIX: Update stats immediately
+        renderHistorySection(); // FIX: Update history tab if open (though history handles logs, maybe strict separation? but good to refresh)
         showToast('Student deleted', 'success');
+    }
+};
+
+window.handleClearAllHistory = async () => {
+    if (confirm('Are you sure you want to clear ALL payment history? This action cannot be undone.')) {
+        try {
+            await clearAllPaymentLogs();
+            renderStats();
+            renderHistorySection();
+            showToast('All Payment History Cleared!', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Error clearing history', 'error');
+        }
     }
 };
 
@@ -704,11 +720,18 @@ window.renderHistorySection = async () => {
             return;
         }
 
-        // 3. Filter Logs by Selected Month
+        // 3. Filter Logs by Selected Month & Search
         // Read fresh value from DOM in case we just set it or user changed it
         selectedMonth = monthSelect.value;
+        const searchQuery = document.getElementById('search-history') ? document.getElementById('search-history').value.toLowerCase() : "";
 
-        const filteredLogs = logs.filter(log => log.monthKey === selectedMonth);
+        const filteredLogs = logs.filter(log =>
+            log.monthKey === selectedMonth &&
+            (
+                (log.studentName && log.studentName.toLowerCase().includes(searchQuery)) ||
+                (log.amount && log.amount.toString().includes(searchQuery))
+            )
+        );
 
         // 4. Calculate Stats
         const total = filteredLogs.reduce((sum, log) => sum + Number(log.amount), 0);
@@ -764,6 +787,13 @@ if (searchStudentInput) {
 if (searchAttendanceInput) {
     searchAttendanceInput.addEventListener('input', (e) => {
         handleSearch(e.target.value, 'attendance');
+    });
+}
+
+const historySearchInput = document.getElementById('search-history');
+if (historySearchInput) {
+    historySearchInput.addEventListener('input', () => {
+        renderHistorySection();
     });
 }
 

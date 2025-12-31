@@ -232,6 +232,8 @@
                         <button type="submit" class="btn btn-danger">Update Passcode</button>
                     </form>
                 </div>
+
+
             </div>
         </section>
     </div>
@@ -406,14 +408,17 @@
 
     <!-- HISTORY SECTION (New Dedicated Page) -->
     <section id="section-history" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3>Collection History</h3>
-            <div style="display:flex; gap:1rem; align-items:center;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="margin: 0;">Collection History</h3>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap: wrap;">
                 <select id="history-month-select" class="input-field" style="width: auto; padding: 0.25rem 0.5rem;"
                     onchange="renderHistorySection()">
                     <!-- Populated by JS -->
                 </select>
                 <button class="btn btn-outline btn-sm" onclick="renderHistorySection()">↻ Refresh</button>
+                <button class="btn btn-sm btn-danger" onclick="handleClearAllHistory()" title="Delete all history">❌
+                    Clear All</button>
             </div>
         </div>
 
